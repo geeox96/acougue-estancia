@@ -167,7 +167,7 @@ export default {
         text: 'Aviso!'
       },
       alert2: {
-        on: true,
+        on: false,
         text: 'Seu pedido feito com sucesso! aguarde até você receber uma mensagem para retirar seu pedido!'
       },
       dialogConfirmar: false,
