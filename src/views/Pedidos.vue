@@ -195,6 +195,7 @@ export default {
   },
 
   created () {
+    this.alert2.on = false
     this.loading = true
     Axios.get(`http://pedidoapi.estanciasupermercados.com.br/api/Pedido/GetProdutosVenda?loja=${this.$route.params.loja}&secao=${this.$route.params.secao}`).then(resp => {
       resp.data.ResultObject.forEach(item => {
