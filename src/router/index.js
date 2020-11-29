@@ -5,12 +5,12 @@ Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/pedidos-cliente',
+    path: '/pedidos-cliente/:loja/:secao',
     name: 'Pedidos',
     component: () => import('../views/Pedidos.vue')
   },
   {
-    path: '/table-acougue',
+    path: '/tabela-acougue/:loja/:secao',
     name: 'Acougue',
     component: () => import('../views/Acougue.vue')
   }

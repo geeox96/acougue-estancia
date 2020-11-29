@@ -1,5 +1,15 @@
 <template>
-  <div class="acougue">
+  <div v-if='!liberado' class="acougue">
+    <v-card>
+      <v-container>
+        <v-text-field
+          v-model="senha"
+          label="Codigo do funcionario"
+        />
+      </v-container>
+    </v-card>
+  </div>
+  <div v-else class="acougue">
     <v-dialog
       v-model="dialogMaisInfo"
       persistent
@@ -7,10 +17,7 @@
     >
       <v-card>
         <v-card-title class="headline">
-          {{ infos.nome }}
-        </v-card-title>
-        <v-card-title class="subtitle-1">
-          {{ infos.celular }}
+          Pedido de {{ infos.nome }}
         </v-card-title>
         <v-card-actions>
           <v-container fluid>
@@ -19,16 +26,10 @@
               <thead>
                 <tr>
                   <th class="text-left">
-                    Tipo
-                  </th>
-                  <th class="text-left">
                     Produto
                   </th>
-                  <th class="text-right">
+                  <th class="text-center">
                     Quantidade
-                  </th>
-                  <th class="text-right">
-                    Corte
                   </th>
                   <th class="text-right">
                     Objervações
@@ -40,10 +41,8 @@
                   v-for="item in infos.itens"
                   :key="item.nome"
                 >
-                  <td>{{ item.tipo }}</td>
                   <td>{{ item.produto }}</td>
                   <td>{{ item.quantidade }}Kg(s)</td>
-                  <td>{{ item.corte }}</td>
                   <td>{{ item.obs }}</td>
                 </tr>
               </tbody>
@@ -132,33 +131,46 @@
             >
               <v-card @click='abrirDialogMaisInfo(item)'>
                 <v-card-title class="subheading font-weight-bold">
-                  {{ item.nome }}
+                  #{{ item.Codigo }} - {{ item.Nome }}
                 </v-card-title>
 
                 <v-divider></v-divider>
 
                 <v-list dense>
-                  <v-list-item
-                    v-for="(key, index) in filteredKeys"
-                    :key="index"
-                  >
-                    <v-list-item-content
-                    >
-                      {{ key }}:
-                    </v-list-item-content>
-                    <v-list-item-content
-                      class="align-end green--text"
-                      v-if="item.status === 'Concluído'"
-                    >
-                      {{ item[key.toLowerCase()] }}
-                    </v-list-item-content>
+                      <v-list-item>
+                      <v-list-item-content>
+                        Telefone:
+                      </v-list-item-content>
                       <v-list-item-content
-                      class="align-end primary--text"
-                      v-else
-                    >
-                      {{ item[key.toLowerCase()] }}
-                    </v-list-item-content>
-                  </v-list-item>
+                        class="align-end red--text"
+                        v-if="item.Status === 1"
+                      >
+                        {{ item.Telefone }}
+                      </v-list-item-content>
+                      <v-list-item-content
+                        class="align-end green--text"
+                        v-else
+                      >
+                        {{ item.Telefone}}
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item>
+                      <v-list-item-content>
+                        Status:
+                      </v-list-item-content>
+                      <v-list-item-content
+                        class="align-end red--text"
+                        v-if="item.Status === 1"
+                      >
+                        Aguardando
+                      </v-list-item-content>
+                      <v-list-item-content
+                        class="align-end green--text"
+                        v-else
+                      >
+                        Concluído
+                      </v-list-item-content>
+                    </v-list-item>
                 </v-list>
               </v-card>
             </v-col>
@@ -198,7 +210,6 @@
             <span class="mr-4 grey--text">
               Página {{ pagina }} de {{ numberOfPages }}
             </span>
-            <v-rows>
               <v-btn
                 fab
                 dark
@@ -217,7 +228,6 @@
               >
                 <v-icon>mdi-chevron-right</v-icon>
               </v-btn>
-            </v-rows>
           </v-row>
         </template>
       </v-data-iterator>
@@ -226,27 +236,17 @@
 </template>
 
 <script>
+import Axios from 'axios'
 export default {
-  name: 'Açougue',
+  name: 'acougue',
   data () {
     return {
+      liberado: false,
+      senha: null,
       infos: {
         nome: null,
         celular: null,
-        itens: [{
-          tipo: 'tipo',
-          produto: 'produto',
-          quantidade: 1.500,
-          corte: 'corte',
-          obs: 'observações do cliente'
-        },
-        {
-          tipo: 'tipo do item',
-          produto: 'produto do item',
-          quantidade: 3.500,
-          corte: 'corte do item',
-          obs: 'observações do cliente'
-        }]
+        itens: []
       },
       dialogMaisInfo: false,
       pedidosPorPaginaArray: [6, 12, 18],
@@ -258,32 +258,11 @@ export default {
       sortBy: 'status',
       keys: [
         'Itens',
-        'Celular',
+        'Telefone',
         'Status'
 
       ],
-      pedidos: [
-        {
-          index: 1,
-          nome: 'Claudio Barbosa - #1',
-          itens: 3,
-          celular: '11986599635',
-          status: 'Aguardando'
-        },
-        {
-          index: 2,
-          nome: 'Lucas Barbosa - #2',
-          itens: 1,
-          celular: '(11) 98999-9658',
-          status: 'Concluído'
-        },
-        {
-          index: 3,
-          nome: 'Marta - #3',
-          itens: 2,
-          celular: '(11) 99865 9555',
-          status: 'Aguardando'
-        }]
+      pedidos: []
     }
   },
   computed: {
@@ -295,11 +274,42 @@ export default {
     }
   },
 
+  mounted () {
+    this.liberado = true
+    this.buscarDados()
+    setInterval(() => this.buscarDados(), 15000)
+  },
+
+  watch: {
+    senha: function (pw) {
+      this.senha = pw
+      if (this.senha === 'estancia123') {
+        this.liberado = true
+      }
+    }
+  },
+
   methods: {
     abrirDialogMaisInfo (pedido) {
-      this.infos.nome = pedido.nome
-      this.infos.celular = pedido.celular
-      this.dialogMaisInfo = true
+      Axios.get(`http://pedidoapi.estanciasupermercados.com.br/api/Pedido/GetProdutos?pedido=${pedido.Codigo}`).then(itens => {
+        const veio = itens.data.ResultObject
+        this.infos = {
+          nome: null,
+          celular: null,
+          itens: []
+        }
+        veio.forEach(item => {
+          const novoItemInfo = {
+            quantidade: item.Quantidade,
+            produto: item.Produto,
+            obs: item.Descricao
+          }
+
+          this.infos.itens.push(novoItemInfo)
+        })
+        this.infos.nome = pedido.Nome
+        this.dialogMaisInfo = true
+      })
     },
 
     nextPage () {
@@ -310,6 +320,12 @@ export default {
     },
     carregarPedidosPorPagina (number) {
       this.pedidosPorPagina = number
+    },
+
+    buscarDados () {
+      Axios.get(`http://pedidoapi.estanciasupermercados.com.br/api/Pedido?loja=${this.$route.params.loja}&secao=${this.$route.params.secao}`).then(resp => {
+        this.pedidos = resp.data.ResultObject
+      })
     }
   }
 }
